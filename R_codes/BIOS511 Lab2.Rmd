@@ -1,0 +1,268 @@
+---
+title: "BIOS/EPID 511 Healthcare Data Science"
+subtitle: "Lab 2. Genomic Data and Medical Image Data"
+output: 
+  html_document:
+    toc: true
+author: YOUR NAME
+date: ""
+---
+
+```{r setup, include=FALSE, message=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## 1. Genomic Data Acqusition through Genomic Data Commons
+
+### 1.1 Background of GDC
+
+The National Cancer Institute (NCI) has established the Genomic Data Commons (GDC).
+
+-   The GDC provides the cancer research community with an open and unified repository for sharing and accessing data across numerous cancer studies and projects via a high-performance data transfer and query infrastructure.
+
+-   **R package**: `GenomicDataCommons` Bioconductor package provides basic infrastructure for querying, accessing, and mining genomic datasets available from the GDC.
+
+### 1.2 Quick Start
+
+Installation can be achieved via Bioconductor’s `BiocManager` package.
+
+```{r echo=TRUE, eval=FALSE}
+if (!require("BiocManager"))
+    install.packages("BiocManager")
+BiocManager::install('GenomicDataCommons')
+```
+
+```{r}
+library(GenomicDataCommons)
+
+# Check connectivity and status
+GenomicDataCommons::status()
+```
+
+An operator we will use here is called the pipe operator `%>%` introduced by the `magrittr` package and popularized by `dplyr`. It allows you to pass the result of one function directly into the next. This creates a chain of functions, which is often easier to read and write.
+
+-   Basic syntax: `data %>% function1() %>% function2()`
+
+-   This notation essentially transforms `function2(function1(data))` into a more readable and intuitive format.
+
+```{r}
+library(tidyverse)
+```
+
+### 1.3 Basic design of GDC
+
+There are 4 main types of objects:
+
+-   `projects()`
+
+-   `files()`
+
+-   `cases()`
+
+-   `annotations()`
+
+Each of these can be filtered and specific fields can be selected.
+
+#### Study-level metadata `projects()`
+```{r}
+# Count all projects
+projects() %>% GenomicDataCommons::count()
+
+# List a few projects with selected fields
+projects() %>%
+  GenomicDataCommons::select("project_id") %>%
+  results(size = 5)
+
+# Filter to TCGA projects only
+projects() %>%
+  GenomicDataCommons::filter(program.name == "TCGA") %>%
+  GenomicDataCommons::select("project_id") %>%
+  results(size = 10)
+```
+
+#### Participant/subject level `cases()`
+```{r}
+# Total number of cases
+cases() %>% GenomicDataCommons::count()
+
+# Cases per project (group/facet + aggregations)
+cases() %>%
+  facet("project.project_id") %>%
+  aggregations()
+
+# Pull 10 case IDs from a specific project
+brca_cases <- cases() %>%
+  GenomicDataCommons::filter(project.project_id == "TCGA-BRCA") %>%
+  results(size = 10) %>%
+  ids()
+head(brca_cases)
+```
+
+#### Data objects you can download `files()`
+```{r}
+# Count all files
+files() %>% GenomicDataCommons::count()
+```
+
+#### Curation notes on cases/files `annotations()`
+```{r}
+# Count all annotations
+annotations() %>% GenomicDataCommons::count()
+
+# Annotations for a given project (example TCGA-BRCA)
+annotations() %>%
+  GenomicDataCommons::filter(project.project_id == "TCGA-BRCA") %>%
+  GenomicDataCommons::select("notes") %>%
+  results(size = 5)
+```
+
+### 1.4 Data acqusition
+It takes three steps to acquire datasets from this database.
+
+#### Step 1 - Find data
+
+Builds a `manifest` that can be used to guide the download of raw data
+
+```{r eval=FALSE, echo=TRUE}
+ge_manifest <- files() %>%
+    GenomicDataCommons::filter( cases.project.project_id == 'TCGA-OV') %>% 
+    GenomicDataCommons::filter( type == 'gene_expression' ) %>%
+    GenomicDataCommons::filter( analysis.workflow_type == 'STAR - Counts') %>%
+    manifest()
+head(ge_manifest)
+```
+
+*Practice*: How many gene expression files were specified in the query above? Further restrict the files to open accessed data.
+
+```{r}
+#YOUR CODE
+```
+
+#### Step 2 - Download data
+
+-   If the download had included controlled-access data, the download above would have needed to include a token.
+
+```{r echo=TRUE, eval=FALSE}
+fnames <- lapply(ge_manifest$id[1:2], gdcdata)
+```
+
+-   Find where the data is ...
+
+#### Step 3 - Clinical data
+
+Accessing clinical data is a very common task. Given a set of `case_ids`, the `gdc_clinical()` function will return a list of four `tibbles`.
+
+-   demographic
+
+-   diagnoses
+
+-   exposures
+
+-   main
+
+```{r eval=FALSE, echo=TRUE}
+case_ids <- cases() %>%
+  GenomicDataCommons::filter( project.project_id == 'TCGA-OV') %>% 
+  results(size=10) %>% 
+  ids()
+clindat = gdc_clinical(case_ids)
+names(clindat)
+head(clindat[["main"]])
+```
+
+### 1.5 Example project
+
+The Cancer Model Development Center (CMDC) project is part of the Human Cancer Model Initiative (HCMI) and is managed by the Office of Cancer Genomics within the Center for Cancer Genomics at the National Cancer Institute (NCI). The goal of the HCMI is to generate approximately 1000 novel human "next generation" tumor-derived models as a community resource. The models aim to faithfully recapitulate the cellular complexity and heterogeneity of human tumors.
+
+Download data from the [Genomic Data Commons Data Portal](https://portal.gdc.cancer.gov) repository, the data need to satisfy the following criterion:
+
+-   experimental strategy: RNA-seq
+
+-   data category: transcriptome profiling
+
+-   data type: gene expression quantification
+
+-   project: HCMI-CMDC
+
+-   The data needs to be open accessed.
+
+Q1. How many cases and files are in this project?
+
+```{r}
+#YOUR CODE
+```
+
+Q2. Get the manifest files that satisfying the above criterion.
+
+```{r}
+#YOUR CODE
+```
+
+Q3. Download and read the first data files.
+
+```{r}
+#YOUR CODE
+```
+
+Q4. Find project-related clinical data.
+
+```{r}
+#YOUR CODE
+```
+
+Q5. Find race, gender, ethnicity, and cause_of_death in demographic data
+
+```{r}
+#YOUR CODE
+```
+
+### Wrap-Up
+
+You practiced querying genomic and clinical data from the GDC. You learned how to:
+
+-   Install and connect to GDC
+
+-   Explore available files and projects
+
+-   Build a manifest and download data
+
+-   Retrieve associated clinical information
+
+## 2. Medical Image Data (Explore if you have time in class)
+
+### 2.1 [MedMNIST](https://medmnist.com) Datasets
+
+MedMNIST is a collection of standardized biomedical image datasets designed in the style of the well-known MNIST digit dataset. It contains 12 datasets of 2D images and 6 datasets of 3D images, all pre-processed into small sizes of 28×28 (2D) or 28×28×28 (3D). Each image comes with a classification label, so no special biomedical background is required to start using the data.
+
+We are going to explore the smallest dataset: BreastMNIST.
+
+The BreastMNIST is based on a dataset of 780 breast ultrasound images. It is categorized into 3 classes: normal, benign, and malignant. As we use low-resolution images, we simplify the task into binary classification by combining normal and benign as positive and classifying them against malignant as negative. We split the source dataset with a ratio of 7:1:2 into training, validation and test set. The source images of 1 × 500 × 500 are resized into 1 × 28 × 28.
+
+### 2.2 Import the data
+
+The BreastMNIST dataset is formated using python, let us import the image data into R for illustration. To import a `.npy` file into R, you can use the `reticulate` package, which directly reads NumPy `.npy` files.
+```{r}
+if (!require("reticulate")) 
+  install.packages("reticulate")
+library(reticulate)
+np <- import("numpy")
+
+# Load 3D array (N, 28, 28)
+x <- np$load("data/breastmnist/train_images.npy")
+
+# Example: show first image (grayscale)
+image(x[1, , ], col = gray.colors(256), axes = FALSE)
+```
+### 2.3 Show image and lable
+```{r}
+y <- np$load("data/breastmnist/train_labels.npy")
+length(y)  # should match number of images
+
+i <- 1
+image(x[i, , ], col = gray.colors(256), axes = FALSE,
+      main = paste("Image", i, "Label:", y[i]))
+```
+
+
+
+

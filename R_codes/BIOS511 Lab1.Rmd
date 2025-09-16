@@ -1,0 +1,113 @@
+---
+title: "BIOS/EPID511 Lab1"
+output: html_document
+author: YOUR NAME
+date: ""
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+### NHANES
+The `nhanesA` package in R provides direct access to publicly available data from the National Health and Nutrition Examination Survey (NHANES), a large U.S. survey conducted by the CDC. Instead of manually downloading files from the NHANES website, `nhanesA` allows users to search for variables and tables, download specific survey cycles, and automatically import the data into R as data frames. This makes it easy for researchers and students to explore health, nutrition, and demographic information, and to practice common data wrangling and analysis tasks using real-world public health data. A link to the tutorial: https://cran.r-project.org/web/packages/nhanesA/vignettes/Introducing_nhanesA.html.
+
+The five publicly available data groups in `nhanesA` package are: - Demographics (DEMO) - Dietary (DIET) - Examination (EXAM) - Laboratory (LAB) - Questionnaire (Q). The abbreviated forms in parentheses may be substituted for the long form in nhanesA commands.
+
+Follow the steps below to explore the basics of the package:
+
+1. How many data tables in Examination data group within `nhanesA` package?
+```{r}
+# List NHANES Tables
+library(nhanesA)
+nhanesTables('EXAM', 2005) # EXAM is one of the data group in nhanesA package
+```
+
+2. How many variables are contained in `BMX_D` data table? Which variable is the subject identifier?
+```{r}
+# List Variables in an NHANES Table
+nhanesTableVars('EXAM', 'BMX_D')
+```
+3. The code book
+```{r}
+# For each variable, NHANES provides a codebook
+# list the codebook definition for the gender field RIAGENDR in table DEMO_D.
+nhanesCodebook('DEMO_D', 'RIAGENDR')
+```
+
+4. The question of interest: is higher body mass index (BMI) associated with higher blood pressure in U.S. adults? To start
+```{r}
+demo <- nhanes("DEMO_G") # demographic
+bpx  <- nhanes("BPX_G") # blood pressure
+bmx  <- nhanes("BMX_G")   # body measures (BMI)
+```
+
+  a. Merge the above three data sets
+```{r}
+# YOUR CODE
+```
+
+  b. What is the average BMI in males vs females?
+```{r}
+# YOUR CODE
+```
+
+  c. What is the average systolic blood pressure by BMI category?
+```{r}
+# YOUR CODE
+```
+
+  d. Compare SBP distribution by BMI category.
+```{r}
+# YOUR CODE
+```
+
+5. Discuss. Is there evidence of an association between BMI and SBP?
+What are some limitations (e.g., no survey weights, cross-sectional design)?
+
+
+### Clinical data from the MIMIC-II database for a case study on indwelling arterial catheters
+
+#### Background
+Indwelling arterial catheters (IACs) are used extensively in the ICU for hemodynamic monitoring and for blood gas analysis. IAC use also poses potentially serious risks, including bloodstream infections and vascular complications. In 2015, Hsu et al published a study to assess whether IAC use was associated with mortality in patients who are mechanically ventilated and do not require vasopressor support.
+
+In total, 46 variables were extracted from MIMIC-II, including demographics (e.g. age, weight), clinical observations collected during the first day of ICU stay (e.g. white blood cell count, heart rate), and outcomes (e.g. 28 day mortality and length of stay). 
+
+#### Exploratory Analysis
+
+1. What is the distribution of ICU length of stay (icu_los_day) and hospital length of stay (hospital_los_day)?
+```{r}
+# YOUR CODE
+```
+
+2. How does the use of IAC (aline_flg) relate to ICU length of stay (icu_los_day)?
+```{r}
+# YOUR CODE
+```
+
+
+3. Is there a difference in the the following variables between patients who used IAC and those who did not?
+```
+map_1st: Mean arterial pressure (mmHg, numeric)
+hr_1st: Heart Rate (numeric)
+temp_1st: Temperature (F, numeric)
+spo2_1st: S_pO_2 (%, numeric)
+abg_count: arterial blood gas count (number of tests, numeric)
+wbc_first: first White blood cell count (K/uL, numeric) 
+```
+
+```{r}
+# YOUR CODE
+```
+
+
+
+### Challenge Exercise (explore after class) - COVID tweets (2020/01/20-2020/12/31)
+
+#### Background
+
+The dataset contains hashtags of covid-related tweets, and the number of such hashtangs each day. Generate a plot of hashtag popularity over time for two popular hashtags #coronavirus and #vaccine.
+
+```{r}
+# YOUR CODE
+```
