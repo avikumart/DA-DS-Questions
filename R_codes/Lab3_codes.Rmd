@@ -1,0 +1,115 @@
+---
+title: "Lab 3 Worksheet"
+author: Avikumar Talaviya
+output: html_document
+date: ""
+---
+
+```{r setup, include=FALSE}
+install.packages("knitr")
+install.packages("tidyverse")
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+```
+
+## Synthetic Medical Data
+
+This dataset was genererated using Synthea, a synthetic patient generator that models the medical history of synthetic patients. Their mission is to output high-quality synthetic, realistic but not real, patient data and associated health records covering every aspect of healthcare. The resulting data is free from cost, privacy, and security restrictions, enabling research with Health IT data that is otherwise legally or practically unavailable. We will focus on patient and observation data.
+
+**Q1**: Extract state and country from address variable in patient data, replace the address variable.
+```{r}
+data1 = read.csv("patients.csv")
+head(data1)
+```
+
+
+```{r}
+library(dplyr)
+library(stringr)
+
+data1 <- data1 %>%
+  mutate(
+    state = str_extract(address, "\\b[A-Z]{2}\\b"),
+    country = str_extract(address, "\\bUS\\b")
+  )
+  )
+data1 <- data1 %>% select(-address)
+  
+data1
+```
+
+
+**Q2**: in OBSERVATION data, each is measured their Body Height, Body Mass Index, Body Weight, Diastolic Blood Pressure, Systolic Blood Pressure, make it a tidy format. [Hint: remove CODE and UNITS variables first.]
+```{r}
+data2 <- read.csv("observations.csv")
+
+data2 <- data2 %>% select(-c(CODE,UNITS))
+```
+
+
+**Q3**: Merge with patient and observation data.
+```{r}
+merged_data <- merge(data1, data2, by.x = "patient", by.y="PATIENT")
+
+merged_data
+```
+
+
+## Pima Indians Diabetes Database
+```{r}
+install.packages("mlbench")
+data("PimaIndiansDiabetes2", package = "mlbench")
+PimaIndiansDiabetes2 <- as_tibble(PimaIndiansDiabetes2)
+head(PimaIndiansDiabetes2)
+```
+
+**Q1**: Use visualization techniques to explore how does plasma glucose concentration vary with diabetes status among different age groups? The visualization should be able to help understand if higher glucose levels correlate more strongly with diabetes in certain age groups.
+
+```{r}
+head(PimaIndiansDiabetes2)
+library(ggplot2)
+
+pimadiabetes <- PimaIndiansDiabetes2 %>%
+  mutate(age_group = cut(
+    age,
+    breaks = c(20, 30, 40, 50, 60, 80),
+    labels = c("20-29", "30-39", "40-49", "50-59", "60+"),
+    right = FALSE
+  ))
+
+head(PimaIndiansDiabetes2$age_group)
+
+ggplot(pimadiabetes, aes(x = diabetes, y = glucose, fill = diabetes)) +
+  geom_boxplot(alpha = 0.7, outlier.color = "red") +
+  facet_wrap(~ age_group) +
+  labs(
+    title = "Plasma Glucose Concentration vs Diabetes status by age group",
+    x = "Diabetes Status",
+    y = "Plasma Glucose Concentration",
+    fill = "Diabetes"
+  ) +
+  theme_minimal(base_size = 13) +
+  theme(
+    plot.title = element_text(face = "bold", hjust=0.5),
+    legend.position = "none"
+  )
+```
+
+**Q2**: How does the relationship between plasma glucose concentration and insulin levels differ between individuals diagnosed with diabetes and those not diagnosed?
+```{r}
+ggplot(pimadiabetes, aes(x = glucose, y = insulin, color = diabetes)) +
+  geom_point(alpha = 0.7) +
+  geom_smooth(method = "lm", se = TRUE, linewidth = 1.2) +
+  labs(
+    title = "Relationship Between Plasma Glucose and Insulin Levels",
+    subtitle = "Colored by Diabetes Status",
+    x = "Plasma Glucose Concentration",
+    y = "Insulin Level",
+    color = "Diabetes Status"
+  ) +
+  theme_minimal(base_size = 13) +
+  theme(
+    plot.title = element_text(face = "bold", hjust = 0.5)
+  )
+```
+
