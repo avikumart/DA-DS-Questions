@@ -1,0 +1,500 @@
+---
+title: "Interactive documents with shiny"
+author: "Yiwen Liu"
+date: "FALL2024"
+output: 
+  html_document: 
+    toc: yes
+    code_folding: show
+  ioslides_presentation:
+    widescreen: yes
+subtitle: Healthcare Data Science (BIOS/EPID 511)
+runtime: shiny
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(cache = FALSE)
+library("tidyverse")
+```
+
+## Why Shiny?
+
+An often ignored piece of the data science process is deploying a complete solution that can be consumed by the non-technical decision makers. RStudio Shiny is an excellent tool for building and deploying that solution. 
+
+Shiny provides data scientists with the ability to 
+
+  + build reactive web applications all in R programming language, and
+
+  + better presentations of data and ideas!
+
+Why use Shiny? From [Linkedin](https://www.linkedin.com/learning/creating-interactive-presentations-with-shiny-and-r/why-use-shiny) 
+
+---
+
+Examples:
+
+- [Risk Equations for Complications Of Type 2 Diabetes](https://sanjaybasu.shinyapps.io/recode/)
+
+- [Coronavirus tracker](https://shiny.john-coene.com/coronavirus/), [Coronavirus dashboard](https://ramikrispin.github.io/coronavirus_dashboard/), and many more...
+
+- [Another good representation of data](https://research.hackerrank.com/developer-skills/2018/).
+
+- [Biostatistics Review Times](https://medium.com/@biostatistics/review-times-shiny-app-3bc2a8f26be) - [Shiny app](https://jhubiostatistics.shinyapps.io/Biostatistics_Review_Times/?source=post_page-----3bc2a8f26be----------------------)
+
+
+## Understand architecture
+
+Shiny applications are divided into two parts: the UI is responsible for the app presentation, and the server is responsible for the app logic.
+
+- The UI controls what is being displayed on the application page and how the components are laid out. This may include 
+
+    + text and other markdown elements 
+    
+    + graphics
+    
+    + widgets that take in user input
+    
+    + plots 
+    
+- The server will be where you load in and wrangle data, then define your outputs (i.e. plots) using input from the UI.
+
+---
+
+Both of these parts can be defined in one file, but it is good practice to separate these into two files to simplify any future changes or maintenance on the app.
+
+<p align="center">
+<img src="images/arch.png" height="320">
+</p>
+
+## Set up
+
+- Install and load the `shiny` package:
+
+```{r eval=FALSE}
+    install.packages("shiny")
+    library("shiny")
+```
+
+
+- Your first shiny app
+
+```{r}
+    library(shiny)
+    ui <- fluidPage("Hello World!")
+    server <- function(input, output) {}
+    shinyApp(ui = ui, server = server)
+```
+
+---
+
+- A Shiny app has 3 components:
+
+    1. `ui`: assemble the HTML user interface for your app.
+
+    2. `server`: a function with instructions on how to build and rebuild the R objects displayed in the UI.
+
+    3. `shinyApp`: combines `ui` and `server` into an app.
+
+## A simple case study
+
+Let's start with something simple. We are going to create a shiny app with
+
+- Input: distribution type and number of value generated from the distribution
+
+- Output: a histogram of the simulated values
+
+<p align="center">
+<img src="images/shiny_example.png" height="320">
+</p>
+
+## Basic UI
+
+- The user interface defines what will be displayed in the application. This includes text, images, plots, widgets, and more.
+
+- To insert different input controls into your UI specification, you may functions like 
+
+  + `sliderInput()`, 
+  
+  + `selectInput()`, 
+  
+  + `textInput()`, and 
+  
+  + `numericInput()`. 
+
+---
+
+- Now we’ll discuss the common structure that underlies all input functions and give a quick overview of the inputs built into Shiny. In general
+```{r,eval=F}
+ui <- fluidPage(
+# *Input() functions,
+# *Output() functions
+)
+```
+
+<!-- <div class="form-group shiny-input-container"> -->
+<!-- <label class="control-label" for="num">Choose a number</label> -->
+<!-- <input class="js-range-slider" id="num" data-min="1" data-max="100" -->
+<!-- data-from="25" data-step="1" data-grid="true" data-grid-num="9.9" -->
+<!-- data-grid-snap="false" data-prettify-separator="," data-keyboard="true" -->
+<!-- data-keyboard-step="1.01010101010101"/> -->
+<!-- </div> -->
+
+### Inputs
+
+-  Numeric input
+    ```{r, echo = TRUE}
+    library(shiny)
+    # Add elements to your app as arguments to fluidPage()
+    ui <- fluidPage(
+      numericInput("num", "Number one", value = 0, min = 0, max = 100),
+      sliderInput("num2", "Number two", value = 50, min = 0, max = 100),
+      sliderInput("rng",  "Range", value = c(10, 20), min = 0, max = 100)
+    )
+    server <- function(input, output) {}
+    shinyApp(ui = ui, server = server)
+    ```
+
+---
+
+- Limited choices
+    ```{r}
+    vaccination=c("Yes", "No", "Not Sure")
+    ui <- fluidPage(
+      selectInput("state", "Please select the State/Territory that your health center is located in:", state.name),
+      radioButtons("vaccination", "Have your initiated your COVID-19 immunization series in the last two weeks?", vaccination)
+)
+    server <- function(input, output) {}
+    shinyApp(ui = ui, server = server)
+    ```
+
+### Practices
+
+- Create a slider input to select values between 0 and 100 where the interval between each selectable value on the slider is 5.
+    ```{r}
+    ui <- fluidPage(
+    sliderInput("num", "Select a number", value=5, min=0, max=100, step=5)
+)
+    server <- function(input, output) {}
+    shinyApp(ui = ui, server = server)
+    ```
+
+---
+
+- Create a radio button input to select distribution types among `Normal, Uniform, Log-normal, Exponential`, and a slider input to select values between 1 and 1000.
+    ```{r}
+    ui <- fluidPage(
+      radioButtons("dist", "Distribution type:",
+                   c("Normal" = "norm",
+                     "Uniform" = "unif",
+                     "Log-normal" = "lnorm",
+                     "Exponential" = "exp")),
+      sliderInput("n",
+                  "Number of observations:",
+                  value = 500,
+                  min = 1,
+                  max = 1000)
+      
+    )
+    server <- function(input, output) {}
+    shinyApp(ui = ui, server = server)
+    ```
+
+### Layout
+
+Shiny includes a number of facilities for laying out the components of an application. The essential components are:
+
+- `titlePanel`
+
+- A `sidebarLayout()`: for placing a `sidebarPanel()` of inputs alongside a `mainPanel()` output content.
+
+---
+
+Shiny app also provides features:
+
+- Custom layouts using Shiny’s grid layout system (i.e., `fluidRow()` & `column()`).
+
+- Segmenting layouts using the `tabsetPanel()` and `navlistPanel()` functions.
+
+- Creating applications with multiple top-level components using the `navbarPage()` function.
+
+### Practices
+
+- Add `titlePanel` and other layouts for the app above
+    ```{r}
+ui <- fluidPage(
+  
+  # App title ----
+  titlePanel("Tabsets"),
+  
+  # Sidebar layout with input and output definitions ----
+  sidebarLayout(
+    
+    # Sidebar panel for inputs ----
+    sidebarPanel(
+      
+      # Input: Select the random distribution type ----
+      radioButtons("dist", "Distribution type:",
+                   c("Normal" = "norm",
+                     "Uniform" = "unif",
+                     "Log-normal" = "lnorm",
+                     "Exponential" = "exp")),
+      
+      # Input: Slider for the number of observations to generate ----
+      sliderInput("n",
+                  "Number of observations:",
+                  value = 500,
+                  min = 1,
+                  max = 1000)
+      
+    ),
+    
+    # Main panel for displaying outputs ----
+    mainPanel( )
+  )
+)
+
+    server <- function(input, output) {}
+    shinyApp(ui = ui, server = server)
+    ```
+    
+## Output
+
+Shiny provides a family of functions that turn R objects into output for your user interface. Each function creates a specific type of output.
+
+
+Output function |	Creates
+--------------- | ------------
+dataTableOutput	| DataTable
+htmlOutput |	raw HTML
+imageOutput	| image
+plotOutput	| plot
+tableOutput	| table
+textOutput	| text
+verbatimTextOutput |	text
+
+You can add output to the user interface in the same way that you added HTML elements and widgets. Place the output function inside `sidebarPanel` or `mainPanel` in the `ui`.
+
+### The `server` function
+
+Before introducing the `server` function, we need to understand `reactivity` and `render` in R.
+
+### reactivity
+
+Reactivity is what makes your Shiny apps responsive. It lets the app instantly update itself whenever the user makes a change. 
+
+If you have a simple R expression like {a + 1}, R will retrieve information from a to evaluate the expression, but R won’t modify the result of {a + 1} if you later change the value of a.
+```{r}
+a <- 1
+a+1
+
+a <- 2
+## nothing happens
+```
+
+---
+
+Reactivity is:
+
+  > every time you run an expression, the expression updates itself. It looks up the current value of each object that it uses and computes new ouput. However, you must tell R to run the expresssion for this to happen because R uses a style of execution known as lazy evaluation. In other words, R will not execute an expression until you force it to.
+
+### `render`
+
+Each entry to output should contain the output of one of Shiny’s `render*` functions. These functions capture an R expression and do some light pre-processing on the expression. Use the `render*` function that corresponds to the type of reactive object you are making.
+
+render function	| creates
+--------------- | ---------
+renderDataTable	| DataTable
+renderImage	| images (saved as a link to a source file)
+renderPlot	| plots
+renderPrint	| any printed output
+renderTable	| data frame, matrix, other table like structures
+renderText	| character strings
+renderUI	| a Shiny tag object or HTML
+
+### Practices
+
+If your UI contains a numeric input control from 0 to 100, to print the output:
+```{r}
+ui <- fluidPage(
+  titlePanel("basic app"),
+  
+  sidebarPanel(
+    sliderInput("a", 
+      label = "Select an input to display",
+      min = 0, max = 100, value = 50)
+  ),
+      
+  mainPanel(textOutput("text"))
+)
+
+server <- function(input, output) {
+    output$text <- renderText({ paste("The input values is " , input$a, sep="") })
+}
+
+shinyApp(ui = ui, server = server)
+```
+
+## Other Outputs
+
+Outputs in the UI create placeholders that are later filled by the server function. Like inputs, outputs take a unique ID as their first argument: if your UI specification creates an output with ID "plot", you’ll access it in the server function with `output$plot`.
+
+- Text output: note that there are two render functions which behave slightly differently: `renderText()` combines the result into a single string, and is usually paired with `textOutput()`; `renderPrint()` prints the result, as if you were in an R console, and is usually paired with `verbatimTextOutput()`.
+  
+    ```{r}
+    ui <- fluidPage(
+      textOutput("text"),
+      verbatimTextOutput("code")
+      )
+    server <- function(input, output) {
+      output$text <- renderText({ 
+        "Summary of 100 random value from standard normal distribution" 
+        })
+      output$code <- renderPrint({ 
+        summary(rnorm(100)) 
+        })
+    }
+    shinyApp(ui = ui, server = server)
+    ```
+
+- Table output: for displaying data frames in tables: `tableOutput()` and `renderTable()` render a static table of data, showing all the data at once.
+    ```{r}
+    ui <- fluidPage(
+      tableOutput("static")
+    )
+    server <- function(input, output) {
+      output$static <- renderTable(head(mpg))
+    }
+    shinyApp(ui = ui, server = server)
+    ```
+
+- Plots: 
+    ```{r}
+    ui <- fluidPage(
+      plotOutput("plot", width = "400px")
+    )
+    server <- function(input, output) {
+      output$plot <- renderPlot({
+        boxplot(cty~fl, data=mpg)
+      }, res = 96)
+    }
+    shinyApp(ui = ui, server = server)
+    ```
+
+## A summary
+
+Use 3 rule to write server function
+```{r,echo=T,eval=F}
+server <- function(input, output) {
+  
+}
+```
+
+1. Save objects to display to `output$`
+```{r,echo=T,eval=F}
+server <- function(input, output) {
+  output$hist <- # code
+}
+```
+
+
+2. Build objects to display with `render*()`
+```{r}
+server <- function(input, output) {
+  output$hist <- renderPlot({
+    hist(rnorm(100))
+    })
+}
+```
+
+3.Access input values with `input$`
+```{r,echo=T}
+server <- function(input, output) {
+  output$hist <- renderPlot({
+    hist(rnorm(input$num))
+    })
+}
+```
+
+# Practices
+
+Complete the server function and create a shiny app with: 
+
+Input: distribution type and number of value generated from the distribution
+
+Output: a histogram of the simulated values
+
+```{r}
+library(shiny)
+
+# Define UI for random distribution app ----
+ui <- fluidPage(
+  
+  # App title ----
+  titlePanel("Tabsets"),
+  
+  # Sidebar layout with input and output definitions ----
+  sidebarLayout(
+    
+    # Sidebar panel for inputs ----
+    sidebarPanel(
+      
+      # Input: Select the random distribution type ----
+      radioButtons("dist", "Distribution type:",
+                   c("Normal" = "norm",
+                     "Uniform" = "unif",
+                     "Log-normal" = "lnorm",
+                     "Exponential" = "exp")),
+      
+      # Input: Slider for the number of observations to generate ----
+      sliderInput("n",
+                  "Number of observations:",
+                  value = 500,
+                  min = 1,
+                  max = 1000)
+      
+    ),
+    
+    # Main panel for displaying outputs ----
+    mainPanel(plotOutput("plot"))
+  )
+)
+
+# Define server logic for random distribution app ----
+server <- function(input, output) {
+  
+  # Generate a plot of the data ----
+  # Also uses the inputs to build the plot label. Note that all expressions are called in the sequence
+  # implied by the dependency graph.
+   output$plot <- renderPlot({
+    n <- input$n
+    dist <- switch(input$dist,
+                   norm = rnorm,
+                   unif = runif,
+                   lnorm = rlnorm,
+                   exp = rexp,
+                   rnorm)
+    
+    hist(dist(input$n), main="Histogram")
+  })
+}
+
+# Create Shiny app ----
+shinyApp(ui, server)
+```
+
+
+## Tutorials
+
+- Check the [Shiny cheat sheet](https://github.com/rstudio/cheatsheets/raw/master/shiny.pdf) for a list of inputs and outputs.
+
+- Basic parts of a shiny app: <http://shiny.rstudio.com/articles/basics.html>
+
+- How to build a shiny app: <http://shiny.rstudio.com/articles/build.html>
+
+- How to launch a shiny app: <http://shiny.rstudio.com/articles/running.html>
+
+- More tutorial: <https://shiny.rstudio.com/tutorial/>
+
+- Getting started guide: <http://shiny.rstudio.com/articles/shinyapps.html>
+
+- Get ideas for presenting your data: browse the [Gallery](http://shiny.rstudio.com/gallery/).
