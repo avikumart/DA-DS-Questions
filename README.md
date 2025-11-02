@@ -34,7 +34,7 @@ The content primarily revolves around the following technologies:
 * **Tools:** Microsoft Excel
 * **Platform:** Azure Cloud Services
 
----
+----
 
 ## 💡 How to Use This Repository
 
