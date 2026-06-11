@@ -6,6 +6,9 @@ __pycache__/
 # C extensions
 *.so
 
+# dataset ignore
+PySpark/yellow_tripdata_2026-04.parquet
+
 # Distribution / packaging
 .Python
 build/
